@@ -1,51 +1,124 @@
 #include "main.h"
 
 /**
- * _printf - formatted output conversion and print data.
- * @format: input string.
- *
- * Return: number of chars printed.
+ * check_buffer_overflow - if writing over buffer space,
+ * print everything then revert length back to 0 to write at buffer start
+ * @buffer: buffer holding string to print
+ * @len: position in buffer
+ * Return: length position
+ */
+int check_buffer_overflow(char *buffer, int len)
+{
+	if (len > 1020)
+	{
+		write(1, buffer, len);
+		len = 0;
+	}
+	return (len);
+}
+
+/**
+ * _printf - mini printf version
+ * @format: initial string with all identifiers
+ * Return: strings with identifiers expanded
  */
 int _printf(const char *format, ...)
 {
-	unsigned int i = 0, len = 0, ibuf = 0;
-	va_list arguments;
-	int (*function)(va_list, char *, unsigned int);
-	char *buffer;
+	int len = 0, total_len = 0, i = 0, j = 0;
+	va_list list;
+	char *buffer, *str;
+	char* (*f)(va_list);
 
-	va_start(arguments, format), buffer = malloc(sizeof(char) * 1024);
-	if (!format || !buffer || (format[i] == '%' && !format[i + 1]))
+	if (format == NULL)
 		return (-1);
-	if (!format[i])
-		return (0);
-	for (i = 0; format && format[i]; i++)
+
+	buffer = create_buffer();
+	if (buffer == NULL)
+		return (-1);
+
+	va_start(list, format);
+
+	while (format[i] != '\0')
 	{
-		if (format[i] == '%')
+		if (format[i] != '%') /* copy format into buffer until '%' */
 		{
-			if (format[i + 1] == '\0')
-			{	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
+			len = check_buffer_overflow(buffer, len);
+			buffer[len++] = format[i++];
+			total_len++;
+		}
+		else /* if %, find function */
+		{
+			i++;
+			if (format[i] == '\0') /* handle single ending % */
+			{
+				va_end(list);
+				free(buffer);
 				return (-1);
 			}
+			if (format[i] == '%') /* handle double %'s */
+			{
+				len = check_buffer_overflow(buffer, len);
+				buffer[len++] = format[i];
+				total_len++;
+			}
 			else
-			{	function = get_print_func(format, i + 1);
-				if (function == NULL)
+			{
+				f = get_func(format[i]); /* grab function */
+				if (f == NULL)  /* handle fake id */
 				{
-					if (format[i + 1] == ' ' && !format[i + 2])
-						return (-1);
-					handl_buf(buffer, format[i], ibuf), len++, i--;
+					len = check_buffer_overflow(buffer, len);
+					buffer[len++] = '%'; total_len++;
+					buffer[len++] = format[i]; total_len++;
 				}
-				else
+				else /* return string, copy to buffer */
 				{
-					len += function(arguments, buffer, ibuf);
-					i += ev_print_func(format, i + 1);
+					str = f(list);
+					if (str == NULL)
+					{
+						va_end(list);
+						free(buffer);
+						return (-1);
+					}
+					if (format[i] == 'c' && str[0] == '\0')
+					{
+						len = check_buffer_overflow(buffer, len);
+						buffer[len++] = '\0';
+						total_len++;
+					}
+					j = 0;
+					while (str[j] != '\0')
+					{
+						len = check_buffer_overflow(buffer, len);
+						buffer[len++] = str[j];
+						total_len++; j++;
+					}
+					free(str);
 				}
 			} i++;
 		}
-		else
-			handl_buf(buffer, format[i], ibuf), len++;
-		for (ibuf = len; ibuf > 1024; ibuf -= 1024)
-			;
 	}
-	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
-	return (len);
+	write_buffer(buffer, len, list);
+	return (total_len);
+}
+
+/**
+ * main - sample main program
+ * Return: 0 on sucess
+ */
+int main(void)
+{
+	_printf("\n\n\nHere's some examples of what you could do with this custom_printf function!\n\n\n");
+	sleep(1);
+	_printf("\nPrinting Strings, Characters, and Numbers...... %s %c%drld\n\n", "Hello", 'W', 0);
+	sleep(1);
+	_printf("Printing Reverse...... %r \n\n", "Hello");
+	sleep(1);
+	_printf("Printing Binary (base 2)...... %b \n\n", "Hello");
+	sleep(1);
+	_printf("Printing Octal (base 8)...... %o \n\n", "Hello");
+	sleep(1);
+	_printf("Printing Rot13 (encrypt)...... %R \n\n", "Hello");
+	sleep(1);
+	_printf("\n\n             = )                  \n\n\n");
+	return (0);
 }
