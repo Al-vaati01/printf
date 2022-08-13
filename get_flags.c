@@ -1,6 +1,5 @@
 #include "main.h"
 
-<<<<<<< HEAD
  /**
   * get_flags - Calculates active flags
   * @format: Formatted string in which to print the arguments
@@ -31,7 +30,6 @@ int get_flags(const char *format, int *i)
 	int flags = 0;
 	const char FLAGS_CH[] = {'-', '+', '0', '#', ' ', '\0'};
 	const int FLAGS_ARR[] = {F_MINUS, F_PLUS, F_ZERO, F_HASH, F_SPACE, 0};
->>>>>>> 152ecaed0b964fa599b6fba1fd13f4c49766060a
 
 	for (curr_i = *i + 1; format[curr_i] != '\0'; curr_i++)
 	{
